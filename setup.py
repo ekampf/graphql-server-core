@@ -1,6 +1,13 @@
 from setuptools import setup, find_packages
 
-required_packages = ['graphql-core', 'promise']
+required_packages = [
+    'graphql-core',
+    'promise'
+]
+
+dependency_links = [
+    'git+https://github.com/ekampf/graphql-core.git@feature/tracing_support#egg=graphql-core'
+]
 
 setup(
     name='graphql-server-core',
@@ -28,6 +35,7 @@ setup(
     keywords='api graphql protocol rest',
     packages=find_packages(exclude=['tests']),
     install_requires=required_packages,
+    dependency_links=dependency_links,
     tests_require=['pytest>=2.7.3'],
     include_package_data=True,
     zip_safe=False,
