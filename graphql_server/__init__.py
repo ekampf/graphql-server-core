@@ -8,6 +8,7 @@ from graphql.error import GraphQLError
 from graphql.execution import ExecutionResult
 from graphql.utils.get_operation_ast import get_operation_ast
 
+from graphql_server.tracing import TracingMiddleware
 from .error import HttpQueryError
 
 
@@ -26,7 +27,7 @@ def default_format_error(error):
     return {'message': six.text_type(error)}
 
 
-def run_http_query(schema, request_method, data, query_data=None, batch_enabled=False, catch=False, **execute_options):
+def run_http_query(schema, request_method, data, query_data=None, batch_enabled=False, catch=False, tracing=False, **execute_options):
     if request_method not in ('get', 'post'):
         raise HttpQueryError(
             405,
@@ -39,6 +40,7 @@ def run_http_query(schema, request_method, data, query_data=None, batch_enabled=
         catch = HttpQueryError
     else:
         catch = SkipException
+
     is_batch = isinstance(data, list)
 
     is_get_request = request_method == 'get'
@@ -75,6 +77,7 @@ def run_http_query(schema, request_method, data, query_data=None, batch_enabled=
         params,
         catch,
         allow_only_query,
+        tracing=tracing,
         **execute_options
     ) for params in all_params]
 
@@ -124,12 +127,13 @@ def get_graphql_params(data, query_data):
     return GraphQLParams(query, load_json_variables(variables), operation_name)
 
 
-def get_response(schema, params, catch=None, allow_only_query=False, **kwargs):
+def get_response(schema, params, catch=None, allow_only_query=False, tracing=False, **kwargs):
     try:
         execution_result = execute_graphql_request(
             schema,
             params,
             allow_only_query,
+            tracing=tracing,
             **kwargs
         )
     except catch:
@@ -159,13 +163,24 @@ def format_execution_result(execution_result, format_error):
     return GraphQLResponse(response, status_code)
 
 
-def execute_graphql_request(schema, params, allow_only_query=False, **kwargs):
+def execute_graphql_request(schema, params, allow_only_query=False, tracing=False, **kwargs):
     if not params.query:
         raise HttpQueryError(400, 'Must provide query string.')
 
+    tracing_middleware = TracingMiddleware()
+    tracing_middleware.start()
+
     try:
+        tracing_middleware.parsing_start()
         source = Source(params.query, name='GraphQL request')
         ast = parse(source)
+    except Exception as e:
+        return ExecutionResult(errors=[e], invalid=True)
+    finally:
+        tracing_middleware.parsing_end()
+
+    try:
+        tracing_middleware.validation_start
         validation_errors = validate(schema, ast)
         if validation_errors:
             return ExecutionResult(
@@ -174,6 +189,8 @@ def execute_graphql_request(schema, params, allow_only_query=False, **kwargs):
             )
     except Exception as e:
         return ExecutionResult(errors=[e], invalid=True)
+    finally:
+        tracing_middleware.validation_end
 
     if allow_only_query:
         operation_ast = get_operation_ast(ast, params.operation_name)
