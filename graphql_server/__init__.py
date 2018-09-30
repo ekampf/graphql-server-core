@@ -176,6 +176,7 @@ def execute_graphql_request(
     allow_only_query=False,  # type: bool
     backend=None,  # type: GraphQLBackend
     tracing=False,  # type: bool
+    middleware=None,  # type: Optional[Any]
     **kwargs  # type: Dict
 ):
     if not params.query:
@@ -207,12 +208,11 @@ def execute_graphql_request(
 
     try:
         if tracing:
-            middleware = kwargs.get("middleware") or []
+            middleware = middleware or []
             middleware.append(tracing_middleware)
-            kwargs["middleware"] = middleware
 
         result = document.execute(
-            operation_name=params.operation_name, variables=params.variables, **kwargs
+            operation_name=params.operation_name, variables=params.variables, middleware=middleware, **kwargs
         )
 
         tracing_middleware.end()
