@@ -1,4 +1,7 @@
+import sys
 import time
+
+PY37 = sys.version_info[0:2] >= (3, 7)
 
 
 class TracingMiddleware(object):
@@ -32,7 +35,10 @@ class TracingMiddleware(object):
         self.validation_end_time = self.now()
 
     def now(self):
-        return time.time() * 1000
+        if PY37:
+            return time.time_ns()
+
+        return int(time.time() * 1000000000)
 
     @property
     def start_time_str(self):
