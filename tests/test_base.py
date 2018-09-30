@@ -1,9 +1,8 @@
 from pytest import raises
 import json
 
-from graphql.execution import ExecutionResult
 from graphql_server import run_http_query, GraphQLParams, HttpQueryError, default_format_error
-from .schema import schema
+from tests.schema import schema
 
 
 def execution_to_dict(execution_result):
@@ -18,6 +17,17 @@ def execution_to_dict(execution_result):
 
 def executions_to_dict(execution_results):
     return list(map(execution_to_dict, execution_results))
+
+
+def test_allows_get_with_query_param_and_tracing():
+    query = '{test}'
+    results, params = run_http_query(schema, 'get', {}, tracing=True, query_data=dict(query=query))
+
+    assert bool(results[0].extensions['tracing'])
+
+    tracing_data = results[0].extensions['tracing']
+    assert tracing_data['execution']['resolvers'] == 1
+    assert tracing_data['execution']['resolvers'][0]['path'] == ["test"]
 
 
 def test_allows_get_with_query_param():

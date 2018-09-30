@@ -175,7 +175,7 @@ def execute_graphql_request(
     params,  # type: GraphQLParams
     allow_only_query=False,  # type: bool
     backend=None,  # type: GraphQLBackend
-    tracing=False, # type: bool
+    tracing=False,  # type: bool
     **kwargs  # type: Dict
 ):
     if not params.query:
@@ -206,9 +206,22 @@ def execute_graphql_request(
             )
 
     try:
-        return document.execute(
+        if tracing:
+            if "middleware" not in kwargs:
+                kwargs["middleware"] = []
+
+            kwargs["middleware"].append(tracing_middleware)
+
+        result = document.execute(
             operation_name=params.operation_name, variables=params.variables, **kwargs
         )
+
+        tracing_middleware.end()
+
+        if tracing:
+            result.extensions["tracing"] = tracing_middleware.tracing_dict
+
+        return result
     except Exception as e:
         return ExecutionResult(errors=[e], invalid=True)
 

@@ -51,7 +51,7 @@ class TracingMiddleware(object):
 
     @property
     def tracing_dict(self):
-        return dict(
+        result = dict(
             version=1,
             startTime=self.start_time_str,
             endTime=self.end_time_str,
@@ -60,14 +60,18 @@ class TracingMiddleware(object):
                 startOffset=self.parsing_start_time - self.start_time,
                 duration=self.parsing_end_time - self.parsing_start_time,
             ),
-            validation=dict(
-                startOffset=self.validation_start_time - self.start_time,
-                duration=self.validation_end_time - self.validation_start_time,
-            ),
             execution=dict(
                 resolvers=self.resolver_stats
             )
         )
+
+        if self.validation_start_time and self.validation_end_time:
+            result["validation"] = dict(
+                startOffset=self.validation_start_time - self.start_time,
+                duration=self.validation_end_time - self.validation_start_time,
+            )
+
+        return result
 
     def resolve(self, _next, root, info, *args, **kwargs):
         start = time.time()
