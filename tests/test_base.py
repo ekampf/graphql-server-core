@@ -26,7 +26,7 @@ def test_allows_get_with_query_param_and_tracing():
     assert bool(results[0].extensions['tracing'])
 
     tracing_data = results[0].extensions['tracing']
-    assert tracing_data['execution']['resolvers'] == 1
+    assert len(tracing_data['execution']['resolvers']) == 1
     assert tracing_data['execution']['resolvers'][0]['path'] == ["test"]
 
 
