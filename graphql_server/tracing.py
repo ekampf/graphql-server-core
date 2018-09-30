@@ -8,10 +8,10 @@ class TracingMiddleware(object):
         self.resolver_stats = list()
         self.start_time = None
         self.end_time = None
-        self.parsing_start = None
-        self.parsing_end = None
-        self.validation_start = None
-        self.validation_end = None
+        self.parsing_start_time = None
+        self.parsing_end_time = None
+        self.validation_start_time = None
+        self.validation_end_time = None
 
     def start(self):
         self.start_time = self.now()
@@ -20,16 +20,16 @@ class TracingMiddleware(object):
         self.end_time = self.now()
 
     def parsing_start(self):
-        self.parsing_start = self.now()
+        self.parsing_start_time = self.now()
 
     def parsing_end(self):
-        self.parsing_end = self.now()
+        self.parsing_end_time = self.now()
 
     def validation_start(self):
-        self.validation_start = self.now()
+        self.validation_start_time = self.now()
 
     def validation_end(self):
-        self.validation_end = self.now()
+        self.validation_end_time = self.now()
 
     def now(self):
         return time.time() * 1000
@@ -57,12 +57,12 @@ class TracingMiddleware(object):
             endTime=self.end_time_str,
             duration=self.duration,
             parsing=dict(
-                startOffset=self.parsing_start - self.start_time,
-                duration=self.parsing_end - self.parsing_start,
+                startOffset=self.parsing_start_time - self.start_time,
+                duration=self.parsing_end_time - self.parsing_start_time,
             ),
             validation=dict(
-                startOffset=self.validation_start - self.start_time,
-                duration=self.validation_end - self.validation_start,
+                startOffset=self.validation_start_time - self.start_time,
+                duration=self.validation_end_time - self.validation_start_time,
             ),
             execution=dict(
                 resolvers=self.resolver_stats
