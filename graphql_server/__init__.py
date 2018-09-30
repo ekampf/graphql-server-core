@@ -207,10 +207,9 @@ def execute_graphql_request(
 
     try:
         if tracing:
-            if "middleware" not in kwargs:
-                kwargs["middleware"] = []
-
-            kwargs["middleware"].append(tracing_middleware)
+            middleware = kwargs.get("middleware") or []
+            middleware.append(tracing_middleware)
+            kwargs["middleware"] = middleware
 
         result = document.execute(
             operation_name=params.operation_name, variables=params.variables, **kwargs
