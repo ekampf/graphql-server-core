@@ -2,8 +2,8 @@ import json
 from collections import namedtuple, MutableMapping
 
 import six
-from graphql import get_default_backend
-from graphql.error import format_error as default_format_error
+from graphql import get_default_backend, GraphQLError
+from graphql.error import format_error as format_graphql_error
 from graphql.execution import ExecutionResult
 
 from graphql_server.tracing import TracingMiddleware
